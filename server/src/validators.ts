@@ -4,6 +4,10 @@ interface DownloadURL {
   url: string
 }
 
+interface AddDownload extends DownloadURL {
+  filename?: string
+}
+
 interface FetchSeries extends DownloadURL {
   includeOthers?: boolean
 }
@@ -16,8 +20,9 @@ export const fetchDownloadUrl = Joi.object<DownloadURL>({
   url: Joi.string().uri().required(),
 })
 
-export const addDownload = Joi.object<DownloadURL>({
+export const addDownload = Joi.object<AddDownload>({
   url: Joi.string().uri().required(),
+  filename: Joi.string(),
 })
 
 export const cancelDownload = Joi.object<Filename>({

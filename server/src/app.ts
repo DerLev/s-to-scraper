@@ -106,7 +106,7 @@ api.post("/fetch-download-url", async (req, res) => {
       .json({ code: 400, message: error.details[0].message })
 
   /* Only allow URLs from supported providers (Streamtape) */
-  if (!body.url.match(/(https:\/\/streamtape.com\/e\/)[\w\d]{15}/))
+  if (!body.url.match(/(https:\/\/streamtape.com\/e\/)[\w\d]{14,15}/))
     res.status(400).json({ code: 400, message: "URL not valid" })
 
   /* Get the direct download URL with puppeteer */
@@ -127,7 +127,7 @@ api.post("/add-download", async (req, res) => {
   const url = body.url
 
   /* Only allow URLs from supported providers (Streamtape) */
-  if (!url.match(/(https:\/\/streamtape.com\/e\/)[\w\d]{15}/))
+  if (!url.match(/(https:\/\/streamtape.com\/e\/)[\w\d]{14,15}/))
     return res.status(400).json({ code: 400, message: "URL not valid" })
 
   /* Get the direct download URL with puppeteer */
@@ -137,16 +137,18 @@ api.post("/add-download", async (req, res) => {
       .status(400)
       .json({ code: 400, message: "Could not find download url" })
 
+  const finalFilename = body.filename || downloadUrl.filename
+
   /* Check for disallowed filenames */
   const disallowedFilenames = [".gitkeep", "files.json", "queue.json"]
-  if (disallowedFilenames.find((name) => name === downloadUrl.filename))
+  if (disallowedFilenames.find((name) => name === finalFilename))
     return res.status(403).json({
       code: 403,
       message: "This filename is reserved for system usage",
     })
 
   /* Check if file already exists */
-  const dest = resolve("./downloads", downloadUrl.filename)
+  const dest = resolve("./downloads", finalFilename)
   const exists = existsSync(dest)
   if (exists)
     return res
@@ -155,9 +157,9 @@ api.post("/add-download", async (req, res) => {
 
   /**
    * Add download to the queue
-   * NOTE: A download worker will be started automaitcally
+   * NOTE: A download worker will be started automatically
    */
-  dlq.addToQueue(downloadUrl.filename, downloadUrl.url)
+  dlq.addToQueue(finalFilename, downloadUrl.url)
 
   // downloader(io, dlq, downloadUrl.url, downloadUrl.filename)
 
@@ -199,7 +201,7 @@ api.delete("/cancel-download", async (req, res) => {
   res.status(200).json({ code: 200, message: "Download cancelled!" })
 })
 
-/* Delete a file from the dowloads directory */
+/* Delete a file from the downloads directory */
 api.delete("/delete-file", async (req, res) => {
   /* Validate request body */
   const { value: body, error } = deleteFile.validate(req.body)
@@ -308,7 +310,7 @@ api.post("/fetch-episode", async (req, res) => {
   /* List of providers supported by this app */
   const usableProviders = ["Streamtape"]
 
-  /* Resolve redireccts for supported providers */
+  /* Resolve redirects for supported providers */
   const fetchPromises = streams.map((stream) => {
     if (usableProviders.find((prov) => prov === stream?.prov)) {
       return fetch("https://" + url.split("/")[2] + stream?.url)
