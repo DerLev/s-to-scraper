@@ -6,7 +6,7 @@ FROM base AS server-deps
 WORKDIR /app
 
 # disable installation of standalone browser from Puppeteer
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 COPY server/package.json server/yarn.lock* ./
 RUN yarn --frozen-lockfile
@@ -48,7 +48,7 @@ RUN apt-get update && apt-get install gnupg wget -y && \
   apt-get install google-chrome-stable -y --no-install-recommends && \
   rm -rf /var/lib/apt/lists/*
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nodejs
@@ -62,7 +62,7 @@ USER nodejs
 
 EXPOSE 3000
 
-ENV HOSTNAME "0.0.0.0"
-ENV PORT 3000
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
 
 CMD ["node", "build/app.js"]
