@@ -15,6 +15,7 @@ import {
 import { sToEpisode, sToSeason, sToSeries, streamtape } from "./scrapers.js"
 import downloader, {
   getFileFromJson,
+  getFileJson,
   prepareFolder,
   removeFileFromJson,
 } from "./downloader.js"
@@ -96,6 +97,12 @@ app.get("/downloads/:filename", async (req, res) => {
 /* Api router for all api routes (/api) */
 const api = express.Router()
 
+/* Get all available files */
+api.get("/all-files", async (req, res) => {
+  const filesJson = await getFileJson()
+  res.status(200).json(filesJson)
+})
+
 /* Fetch a direct download URL */
 api.post("/fetch-download-url", async (req, res) => {
   /* Validate request body */
@@ -173,6 +180,11 @@ api.post("/add-download", async (req, res) => {
 /* Get all current downloads */
 api.get("/current-downloads", (req, res) => {
   res.status(200).json(dlq.downloads)
+})
+
+/* Get complete queue */
+api.get("/current-queue", (req, res) => {
+  res.status(200).json(dlq.enqueuedDownloads)
 })
 
 /* Cancel a download */
@@ -328,7 +340,7 @@ api.post("/fetch-episode", async (req, res) => {
         supported: true,
       }
     return {
-      provder: stream?.prov,
+      provider: stream?.prov,
       url: "https://" + url.split("/")[2] + stream?.url,
       supported: false,
     }

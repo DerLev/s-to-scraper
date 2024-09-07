@@ -15,6 +15,25 @@ type DataFile = {
 }[]
 
 /**
+ * Get all files from files.json
+ * @returns The data saved in files.json
+ */
+export const getFileJson = async () => {
+  /* Check if files.json exists */
+  const dataFile = resolve("./downloads", "files.json")
+  const fileExists = existsSync(dataFile)
+  if (!fileExists) throw new Error("Data file does not exist")
+
+  /* Parse the data in files.json */
+  const data = JSON.parse(
+    (await readFile(dataFile, { encoding: "utf-8" })).toString(),
+  ) as DataFile
+
+  /* Return the files */
+  return data
+}
+
+/**
  * Get a file from files.json
  * @param filename The filename of the downloaded file
  * @returns The data saved in files.json
@@ -158,7 +177,6 @@ const downloader = async (
         speed: Number(progress.speed.toFixed(2)),
       }
       dlq.updateDownload = newProgress
-      io.emit("fileDownload", newProgress)
 
       /* Check if the download got cancelled */
       const fromQueue = dlq.getFileFromQueue(filename)
@@ -166,6 +184,8 @@ const downloader = async (
         stream.destroy()
         await dlq.removeFromDownloads(filename, "cancelled")
       }
+
+      io.emit("fileDownload", dlq.downloads)
     },
   )
 
