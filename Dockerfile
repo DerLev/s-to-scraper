@@ -50,8 +50,9 @@ RUN apt-get update && apt-get install gnupg wget -y && \
 
 ENV NODE_ENV=production
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nodejs
+RUN groupadd --gid 1001 --system nodejs
+RUN useradd --uid 1001 --system -g nodejs -G audio,video nodejs
+RUN mkdir -p /home/nodejs/Downloads && chown nodejs:nodejs /home/nodejs -R
 
 COPY server/package.json ./
 COPY --from=server-deps /app/node_modules ./node_modules
