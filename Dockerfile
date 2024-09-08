@@ -65,4 +65,6 @@ EXPOSE 3000
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
+LABEL org.opencontainers.image.source="https://github.com/DerLev/s-to-scraper"
+
 CMD ["node", "build/app.js"]
