@@ -6,7 +6,7 @@ FROM base AS server-deps
 WORKDIR /app
 
 # disable installation of standalone browser from Puppeteer
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 COPY server/package.json server/yarn.lock* ./
 RUN yarn --frozen-lockfile
