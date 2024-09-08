@@ -13,7 +13,7 @@ import {
   Title,
 } from "@mantine/core"
 import { Link } from "react-router-dom"
-import { HiOutlineEye, HiOutlineTrash } from "react-icons/hi2"
+import { HiOutlineEye, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2"
 import { useCallback, useEffect, useState } from "react"
 import socket from "../socket"
 import apiBaseUrl from "../apiBaseUrl"
@@ -74,22 +74,30 @@ const Dashboard = () => {
       }[],
     ) => {
       setCurrentDownloads(data)
-      setDownloadsQueue((previous) =>
-        previous
-          .map((item) => {
-            if (
-              data.findIndex(
-                (download) => download.filename === item.filename,
-              ) >= 0
-            ) {
-              return
-            }
-            return item
-          })
-          .filter((item) => item !== undefined) as { filename: string, timestamp: string, url: string, status: string }[],
+      setDownloadsQueue(
+        (previous) =>
+          previous
+            .map((item) => {
+              if (
+                data.findIndex(
+                  (download) => download.filename === item.filename,
+                ) >= 0
+              ) {
+                return
+              }
+              return item
+            })
+            .filter((item) => item !== undefined) as {
+            filename: string
+            timestamp: string
+            url: string
+            status: string
+          }[],
       )
       if (data.length < lastCurrentDownloadsLength) fetchFiles()
       setLastCurrentDownloadsLength(data.length)
+      if (data.length === 1 && data[0].percentage >= 100)
+        setTimeout(() => fetchDownloads(), 1000)
     }
 
     socket.on("connect", onConnect)
@@ -204,7 +212,12 @@ const Dashboard = () => {
             </Table>
           )) ||
             null}
-          <Button fullWidth component={Link} to="/add">
+          <Button
+            fullWidth
+            component={Link}
+            to="/add"
+            leftSection={<HiOutlinePlus />}
+          >
             Add new file(s)
           </Button>
         </Stack>
