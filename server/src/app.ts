@@ -12,7 +12,13 @@ import {
   cancelDownload,
   deleteFile,
 } from "./validators.js"
-import { sToEpisode, sToSeason, sToSeries, streamtape } from "./scrapers.js"
+import {
+  sToEpisode,
+  sToSeason,
+  sToSeries,
+  streamtape,
+  vidoza,
+} from "./scrapers.js"
 import downloader, {
   getFileFromJson,
   getFileJson,
@@ -133,18 +139,37 @@ api.post("/add-download", async (req, res) => {
 
   const url = body.url
 
-  /* Only allow URLs from supported providers (Streamtape) */
-  if (!url.match(/(https:\/\/streamtape.com\/e\/)[\w\d]{14,15}/))
+  /* Only allow URLs from supported providers (Streamtape, Vidoza) */
+  /* Array: 0 = streamtape.com, 1 = vidoza */
+  const urlRegexes = [
+    /(https:\/\/streamtape.com\/e\/)[\w\d]{14,15}/,
+    /(https:\/\/videzz.net\/embed-)[\w\d]{11,13}(\.html)/,
+  ]
+  if (!urlRegexes.map((regex) => regex.test(url)).find((item) => item === true))
     return res.status(400).json({ code: 400, message: "URL not valid" })
 
   /* Get the direct download URL with puppeteer */
-  const downloadUrl = await streamtape(browser, url)
+  const downloadUrlFunction = async () => {
+    if (urlRegexes[0].test(url)) {
+      return await streamtape(browser, url)
+    } else if (urlRegexes[1].test(url)) {
+      return await vidoza(browser, url)
+    } else {
+      throw new Error("Could not match url with streaming service")
+    }
+  }
+  const downloadUrl = await downloadUrlFunction()
   if (!downloadUrl)
     return res
       .status(400)
       .json({ code: 400, message: "Could not find download url" })
 
-  const finalFilename = body.filename || downloadUrl.filename
+  const fileExtension = downloadUrl.filename.split(".").at(-1) || "unknown"
+  const finalFilename = body.filename
+    ? body.addExtension
+      ? body.filename + "." + fileExtension
+      : body.filename
+    : downloadUrl.filename
 
   /* Check for disallowed filenames */
   const disallowedFilenames = [".gitkeep", "files.json", "queue.json"]
@@ -168,7 +193,7 @@ api.post("/add-download", async (req, res) => {
    */
   dlq.addToQueue(finalFilename, downloadUrl.url)
 
-  // downloader(io, dlq, downloadUrl.url, downloadUrl.filename)
+  downloader(io, dlq, downloadUrl.url, finalFilename)
 
   res.status(202).json({ code: 202, message: "Download queued!" })
   // res
@@ -320,7 +345,7 @@ api.post("/fetch-episode", async (req, res) => {
   )
 
   /* List of providers supported by this app */
-  const usableProviders = ["Streamtape"]
+  const usableProviders = ["Streamtape", "Vidoza"]
 
   /* Resolve redirects for supported providers */
   const fetchPromises = streams.map((stream) => {

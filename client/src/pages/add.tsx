@@ -156,7 +156,7 @@ const Add = () => {
     setProvidersLoading(true)
     await fetch(apiBaseUrl() + "/add-download", {
       method: "POST",
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, filename: form.values.url.split("/")[5] + "-s" + providersObject?.seasonNumber.padStart(2, "0") + "e" + providersObject?.episodeNumber.padStart(2, "0"), addExtension: true }),
       headers: [["Content-Type", "application/json"]],
     })
     setProvidersLoading(false)

@@ -35,6 +35,36 @@ export const streamtape = async (browser: Browser, url: string) => {
 }
 
 /**
+ * Fetch the direct download URL and filename from videzz.net
+ * @param browser The puppeteer instance
+ * @param url The URL to fetch a direct download from
+ * @returns The filename and url for direct download
+ */
+export const vidoza = async (browser: Browser, url: string) => {
+  /* Create a new page in puppeteer */
+  const page = await browser.newPage()
+  await page.setViewport({ width: 1080, height: 1024 })
+
+  await page.goto(url)
+
+  /* Get the download url from the video element */
+  const videoElement = await page.$("video#player_html5_api")
+  if (!videoElement) return
+  const video = await (await videoElement.getProperty("src")).jsonValue()
+
+  /* Resolve the filename */
+  const stream = await fetch(video)
+  const fileName = (() => {
+    const arr = stream.url.split("/")
+    return arr[arr.length - 1].split("?")[0]
+  })()
+
+  await page.close()
+
+  return { url: stream.url, filename: fileName }
+}
+
+/**
  * Fetch all seasons from a series on s.to/aniworld.to
  * @param browser The pupeteer instance
  * @param url The URL to fetch seasons from
