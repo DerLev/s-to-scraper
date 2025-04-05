@@ -7,6 +7,7 @@ import progress from "progress-stream"
 import { readFile, writeFile } from "fs/promises"
 import type { Server } from "socket.io"
 import type DownloadsQueue from "./downloadsQueue.js"
+import userAgent from "./userAgent.js"
 
 type DataFile = {
   filename: string
@@ -150,7 +151,17 @@ const downloader = async (
   /* Check for number of running downloads */
   if (!dlq.startNewInstance) return
 
-  const site = await fetch(url)
+  const hostname = new URL(url).hostname
+  const referrer = hostname.endsWith(".cloudatacdn.com")
+    ? "https://do7go.com/"
+    : undefined
+
+  const site = await fetch(url, {
+    headers: {
+      "User-Agent": userAgent.string,
+    },
+    referrer: referrer,
+  })
 
   if (!site.body) return
 

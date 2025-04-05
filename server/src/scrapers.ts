@@ -1,4 +1,5 @@
 import type { Browser } from "puppeteer"
+import userAgent from "./userAgent.js"
 
 /**
  * Fetch the direct download URL and filename from streamtape.com
@@ -57,6 +58,45 @@ export const vidoza = async (browser: Browser, url: string) => {
   const fileName = (() => {
     const arr = stream.url.split("/")
     return arr[arr.length - 1].split("?")[0]
+  })()
+
+  await page.close()
+
+  return { url: stream.url, filename: fileName }
+}
+
+/**
+ * Fetch the direct download URL and filename from do7go.com
+ * @param browser The puppeteer instance
+ * @param url The URL to fetch a direct download from
+ * @returns The filename and url for direct download
+ */
+export const doodstream = async (browser: Browser, url: string) => {
+  /* Create a new page in puppeteer */
+  const page = await browser.newPage()
+  await page.setViewport({ width: 1080, height: 1024 })
+
+  await page.goto(url)
+
+  /* Get the download url from the video element */
+  const videoElement = await page.$("video#video_player_html5_api")
+  if (!videoElement) return
+  const video = await (await videoElement.getProperty("src")).jsonValue()
+
+  const headers = new Headers({
+    "User-Agent": userAgent.string,
+  })
+
+  /* Resolve the filename */
+  const stream = await fetch(video, {
+    headers: headers,
+    referrer: "https://do7go.com/",
+  })
+  const mimeType = stream.headers.get("Content-Type")
+  const fileName = (() => {
+    const arr = stream.url.split("/")
+    const name = arr[arr.length - 1].split("?")[0]
+    return mimeType ? name + "." + mimeType.split("/")[1] : name
   })()
 
   await page.close()

@@ -13,6 +13,7 @@ import {
   deleteFile,
 } from "./validators.js"
 import {
+  doodstream,
   sToEpisode,
   sToSeason,
   sToSeries,
@@ -30,6 +31,7 @@ import { existsSync } from "fs"
 import DownloadsQueue from "./downloadsQueue.js"
 import { unlink } from "fs/promises"
 import { log, startMsg } from "./log.js"
+import userAgent from "./userAgent.js"
 
 const browser = await puppeteer.launch({
   headless: "new",
@@ -140,10 +142,11 @@ api.post("/add-download", async (req, res) => {
   const url = body.url
 
   /* Only allow URLs from supported providers (Streamtape, Vidoza) */
-  /* Array: 0 = streamtape.com, 1 = vidoza */
+  /* Array: 0 = streamtape.com, 1 = vidoza, 2 = doodstream */
   const urlRegexes = [
     /(https:\/\/streamtape.com\/e\/)[\w\d]{14,15}/,
     /(https:\/\/videzz.net\/embed-)[\w\d]{11,13}(\.html)/,
+    /https:\/\/do7go\.com\/e\/[\w\d]{12}/,
   ]
   if (!urlRegexes.map((regex) => regex.test(url)).find((item) => item === true))
     return res.status(400).json({ code: 400, message: "URL not valid" })
@@ -154,6 +157,8 @@ api.post("/add-download", async (req, res) => {
       return await streamtape(browser, url)
     } else if (urlRegexes[1].test(url)) {
       return await vidoza(browser, url)
+    } else if (urlRegexes[2].test(url)) {
+      return await doodstream(browser, url)
     } else {
       throw new Error("Could not match url with streaming service")
     }
@@ -345,7 +350,7 @@ api.post("/fetch-episode", async (req, res) => {
   )
 
   /* List of providers supported by this app */
-  const usableProviders = ["Streamtape", "Vidoza"]
+  const usableProviders = ["Streamtape", "Vidoza", "Doodstream"]
 
   /* Resolve redirects for supported providers */
   const fetchPromises = streams.map((stream) => {
@@ -429,6 +434,7 @@ setInterval(() => downloadStarter(), 5000)
 /* Get hostname & port from env + start webserver */
 const hostname = process.env.HOSTNAME || "localhost"
 const port = Number(process.env.PORT) || 3000
-server.listen({ port, hostname }, () => {
+server.listen({ port, hostname }, async () => {
   startMsg(hostname, port)
+  userAgent.string = await browser.userAgent()
 })
