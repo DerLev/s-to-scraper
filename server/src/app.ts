@@ -344,7 +344,7 @@ api.post("/fetch-episode", async (req, res) => {
     return res.status(400).json({ code: 400, message: "URL not supported" })
 
   /* Get download URLs with puppeteer */
-  const { streams, episodeNumber, seasonNumber } = await sToEpisode(
+  const { streams, episodeNumber, seasonNumber, languages } = await sToEpisode(
     browser,
     url,
   )
@@ -368,11 +368,13 @@ api.post("/fetch-episode", async (req, res) => {
         provider: stream?.prov,
         url: streamUrlRes[index]?.url,
         supported: true,
+        language: languages[Number(stream.lang) - 1],
       }
     return {
       provider: stream?.prov,
       url: "https://" + url.split("/")[2] + stream?.url,
       supported: false,
+      language: languages[Number(stream.lang) - 1],
     }
   })
 

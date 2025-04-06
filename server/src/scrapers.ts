@@ -235,15 +235,29 @@ export const sToEpisode = async (browser: Browser, url: string) => {
 
   await page.goto(url)
 
+  const languages = (await page.$$eval(
+    "div.hosterSiteVideo > div.changeLanguage > div.changeLanguageBox > img",
+    (elements) =>
+      elements
+        .map((el) => {
+          const source = el.src
+          const matched = source.match(/\/public\/img\/([\w-]+)\.svg/)
+          if (matched === null) return
+          return matched[1]
+        })
+        .filter((item) => item !== undefined),
+  )) as string[]
+
   /* Get all visible redirects */
   const streams = (
     await page.$$eval("div.hosterSiteVideo > ul.row > li", (elements) =>
       elements.map((el) => {
-        if (el.style.display !== "none")
-          return {
-            url: el.dataset.linkTarget,
-            prov: el.innerText.split("\n")[0],
-          }
+        // if (el.style.display !== "none")
+        return {
+          url: el.dataset.linkTarget,
+          prov: el.querySelector("h4")?.innerText.split("\n")[0],
+          lang: el.dataset.langKey,
+        }
       }),
     )
   ).filter((item) => item !== null)
@@ -260,5 +274,5 @@ export const sToEpisode = async (browser: Browser, url: string) => {
 
   await page.close()
 
-  return { streams, episodeNumber, seasonNumber }
+  return { streams, episodeNumber, seasonNumber, languages }
 }

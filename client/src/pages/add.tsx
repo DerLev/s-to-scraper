@@ -53,7 +53,12 @@ const Add = () => {
   const [providersObject, setProvidersObject] = useState<{
     seasonNumber: string
     episodeNumber: string
-    streams: { provider: string; url: string; supported: boolean }[]
+    streams: {
+      provider: string
+      url: string
+      supported: boolean
+      language: string
+    }[]
   } | null>(null)
 
   const searchUrl = async (url: string) => {
@@ -156,10 +161,29 @@ const Add = () => {
     setProvidersLoading(true)
     await fetch(apiBaseUrl() + "/add-download", {
       method: "POST",
-      body: JSON.stringify({ url, filename: form.values.url.split("/")[5] + "-s" + providersObject?.seasonNumber.padStart(2, "0") + "e" + providersObject?.episodeNumber.padStart(2, "0"), addExtension: true }),
+      body: JSON.stringify({
+        url,
+        filename:
+          form.values.url.split("/")[5] +
+          "-s" +
+          providersObject?.seasonNumber.padStart(2, "0") +
+          "e" +
+          providersObject?.episodeNumber.padStart(2, "0"),
+        addExtension: true,
+      }),
       headers: [["Content-Type", "application/json"]],
     })
     setProvidersLoading(false)
+  }
+
+  const formatLanguage = (lang: string) => {
+    const array = lang.split("-")
+    let res = ""
+    array.forEach((item) => {
+      res += ", " + item.substring(0, 3)
+    })
+
+    return res.substring(2)
   }
 
   return (
@@ -289,7 +313,10 @@ const Add = () => {
                     .map((stream, index) => (
                       <Table.Tr key={index}>
                         <Table.Td>
-                          <Text>{stream.provider}</Text>
+                          <Text>
+                            {stream.provider} -{" "}
+                            <small>{formatLanguage(stream.language)}</small>
+                          </Text>
                         </Table.Td>
                         <Table.Td>
                           <Button
@@ -317,7 +344,10 @@ const Add = () => {
                     .map((stream, index) => (
                       <Table.Tr key={index}>
                         <Table.Td>
-                          <Text>{stream.provider}</Text>
+                          <Text>
+                            {stream.provider} -{" "}
+                            <small>{formatLanguage(stream.language)}</small>
+                          </Text>
                         </Table.Td>
                       </Table.Tr>
                     ))}
