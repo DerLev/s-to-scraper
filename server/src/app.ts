@@ -14,6 +14,7 @@ import {
 } from "./validators.js"
 import {
   doodstream,
+  speedfiles,
   sToEpisode,
   sToSeason,
   sToSeries,
@@ -141,12 +142,13 @@ api.post("/add-download", async (req, res) => {
 
   const url = body.url
 
-  /* Only allow URLs from supported providers (Streamtape, Vidoza) */
-  /* Array: 0 = streamtape.com, 1 = vidoza, 2 = doodstream */
+  /* Only allow URLs from supported providers (Streamtape, Vidoza, DoodStream, Speedfiles) */
+  /* Array: 0 = streamtape.com, 1 = vidoza, 2 = doodstream, 3 = speedfiles */
   const urlRegexes = [
     /(https:\/\/streamtape.com\/e\/)[\w\d]{14,15}/,
     /(https:\/\/videzz.net\/embed-)[\w\d]{11,13}(\.html)/,
     /https:\/\/do7go\.com\/e\/[\w\d]{12}/,
+    /https:\/\/speedfiles\.net\/[\w\d]{12}/,
   ]
   if (!urlRegexes.map((regex) => regex.test(url)).find((item) => item === true))
     return res.status(400).json({ code: 400, message: "URL not valid" })
@@ -159,6 +161,8 @@ api.post("/add-download", async (req, res) => {
       return await vidoza(browser, url)
     } else if (urlRegexes[2].test(url)) {
       return await doodstream(browser, url)
+    } else if (urlRegexes[3].test(url)) {
+      return await speedfiles(browser, url)
     } else {
       throw new Error("Could not match url with streaming service")
     }
@@ -350,7 +354,7 @@ api.post("/fetch-episode", async (req, res) => {
   )
 
   /* List of providers supported by this app */
-  const usableProviders = ["Streamtape", "Vidoza", "Doodstream"]
+  const usableProviders = ["Streamtape", "Vidoza", "Doodstream", "SpeedFiles"]
 
   /* Resolve redirects for supported providers */
   const fetchPromises = streams.map((stream) => {
